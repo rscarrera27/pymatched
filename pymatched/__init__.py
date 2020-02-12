@@ -51,21 +51,3 @@ class match:
             return default(self.v)
 
         raise RuntimeError("match must handle every cases.")
-
-
-if __name__ == "__main__":
-    def fx(x):
-        # raise Exception("EXcepted")
-        return x
-
-    v = fx(14)
-
-    # x = match(fx, 14) >> {
-    x = match(v) >> {
-        int: lambda v: print(f"{v} is int"),
-        str: lambda v: print(f"{v} is str"),
-        pattern(*[i for i in range(0, 10)]): lambda x: print("pattern 1 catched"),
-        pattern(*[i for i in range(10, 20)]): lambda x: print("pattern 2 catched"),
-        Exception: lambda x: print(x),
-        ...: lambda: print("default")
-    }
