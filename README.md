@@ -10,7 +10,7 @@ pip install pymatched
 
 # Syntax
 ```python
-result = match(<'func or func result'>, <'func args if needed'>) >> {<'case dict'>}
+result = match([<'func or func result'>], <'func args if needed'>) >> Mapping[Case, Callable]
 ```
 
 ## Match order
