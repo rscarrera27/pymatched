@@ -83,6 +83,20 @@ match(fx(5)) >> {
 }
 ```
 
+## Nested match
+
+```python
+from pymatched import match
+
+fx = lambda x: x
+
+match(fx(5)) >> {
+    int: lambda i: match(i) >> {
+        5: lambda: print("it's five")
+    },
+}
+```
+
 ## Mixed match
 ```python
 from pymatched import pattern, match
