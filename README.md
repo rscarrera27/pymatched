@@ -1,4 +1,4 @@
-<h1 align="center">⏩ pymatched ⏩</h1>
+*<h1 align="center">py<b>matched⇒</b></h1>*
 
 # What is pymatched?
 pymatched is a library which provides functional pattern matching.
@@ -10,24 +10,71 @@ pip install pymatched
 
 # Syntax
 ```python
-result = match([<'func or func result'>], <'func args if needed'>) >> Mapping[Case, Callable]
+result = match(<'func'>) >> Mapping[Hashable, Any]
 ```
 
 ## Match order
-pattern >> value >> type >> default(if defined)
+1. exact match
+2. oneof match
+3. placeholder match (if target is immutable iterable)
+4. type match with guard (Contravariant match)
+5. type match (Invariant match)
+6. type match (Contravariant match)
+7. handling default if exists
 
 # Usage
+
+### Note: How to match mutable value?
+as you know, mutable things cannot be key of dict so we can not match easly.
+
+this is the example of list.
+
+#### Case A: use type guards
+
+```python
+x = match([1, 2, 3]) >> {
+    list: "list",
+    oneof([1], [1, 2], [1, 2, 3]): "[1] | [1, 2] | [1, 2, 3]",
+    (list, lambda x: x == [1, 2, 3]): "(list, f(list) -> bool)",
+    # [1, 2, 3]: "[1, 2, 3]",  --> list is unhashable so not working
+}
+```
+
+#### Case B: use nested match
+
+```python
+x = match([1, 2, 3]) >> {
+    list: match(...) >> {
+        (list, lambda v: v == [1, _, 3]): "pattern is (1, * ,3)",
+        ...: "default"
+    } 
+}
+```
+
 
 ## Value match
 
 ```python
 from pymatched import match
 
-fx = lambda x: x
+match(1) >> {
+    1: "It's 1",
+    5: "It's 5",
+}
+```
 
-match(fx(5)) >> {
-    1: lambda: print("catch 1"),
-    5: lambda: print("catch 5"),
+## Handling default case
+use elipsis `...` or `typing.Any`
+
+if nothing catched but default handler not defined, RuntimeError will be raised.
+
+```python
+from typing import Any
+from pymatched import match
+
+match(None) >> {
+    ...: "default",
+    # Any: "also default",
 }
 ```
 
@@ -35,81 +82,105 @@ match(fx(5)) >> {
 ```python
 from pymatched import match
 
-fx = lambda x: x
+match(42) >> {
+    int: "int caught",
+    ...: lambda v: f"{type(v)} caught"
+}
+```
 
-match(fx(5)) >> {
-    str: lambda: print("catch str"),
-    int: lambda: print("catch int"),
+###  Type match with guard
+
+If tuple's first element is type and second element is lambda, this case will be considered as type match with guard.
+
+```python
+from pymatched import match
+
+match(42) >> {
+    (int, lambda: v: v == 42): "42 caught",
+    int: "int except 42",
+}
+```
+
+type match with guard can use `typing.Any`.
+
+```python
+from typing import Any
+from pymatched import match
+
+match(42) >> {
+    (Any, lambda: v: v in (42, "42")): "42 caught",
+    int: "int except 42",
 }
 ```
 
 ### Exception match in type match
+
+`pymatched.do` wraps executing function. when wrapped function raises error, `do` catch it and return it as normal return. 
+
 ```python
-from pymatched import match
+from pymatched import match, do
 
 def fx(v):
     raise Exception("Ooops!")
 
-match(fx, 5) >> {
-    Exception: lambda e: print(e),
-    int: lambda: print("catch int"),
+match(do(fx, None)) >> {
+    Exception: "exception caught",
+    ...: lambda v: f"{v} caught",
 }
 ```
 
-## Pattern match
+## Oneof match
 ```python
-from pymatched import pattern, match
+from pymatched import oneof, match
 
 fx = lambda x: x
 
 match(fx(5)) >> {
-    pattern(*[i for i in range(0, 10)]): lambda: print("pattern 1"),  # 1 ... 10 => print('pattern 1')
-    pattern(*[i for i in range(10, 20)]): lambda: print("pattern 2"),  # 11 ... 20 => print('pattern 2')
+    oneof(1, 2, 3): "one of 1, 2, 3",
+    oneof(4, 5, 6): "one of 4, 5, 6",
 }
 ```
 
-## Handling default case
-use elipsis (...).
-
-if nothing catched but default handler not defined, RuntimeError will be raised.
+# Placeholder match
 
 ```python
-from pymatched import match
+from pymatched import oneof, match
 
-fx = lambda x: x
-
-match(fx(5)) >> {
-    ...: lambda: print("default"),
+match((1, 2, 3, 4)) >> {  # change (1, 2, 3, 4) into (100, 2, 3, 4) or (1, 9, 3, 9)
+    (1, _, 3, _): "pattern (1, *, 3, *)",
+    (_, 2, _, 4): "pattern (*, 2, *, 4)",
 }
 ```
 
 ## Nested match
 
+If match with `pymatchied._` (PlaceholderTyoe) or `...` (Ellipsis), this match will be considered as nested match.
+
 ```python
-from pymatched import match
+from pymatched import match, _
 
-fx = lambda x: x
-
-match(fx(5)) >> {
-    int: lambda i: match(i) >> {
-        5: lambda: print("it's five")
+match(5) >> {
+    int: match(_) >> {
+        5: "It's 5",
+        ...: "default"
     },
 }
 ```
 
 ## Mixed match
+
+cases could be mixed, but resolved by designated match order.
+
 ```python
-from pymatched import pattern, match
+from pymatched import oneof, match
 
-v = fx(14)
+v = (1, 2, 3)
 
-# x = match(fx, 14) >> {
 x = match(v) >> {
-    int: lambda v: print(f"{v} is int"),
-    str: lambda v: print(f"{v} is str"),
-    pattern(*[i for i in range(0, 10)]): lambda x: print("pattern 1 catched"),
-    pattern(*[i for i in range(10, 20)]): lambda x: print("pattern 2 catched"),
-    Exception: lambda x: print(x),
-    ...: lambda: print("default")
+    tuple: "Tuple caught",
+    (tuple, lambda v: v[-1] == 3): "last item of tuple is 3",
+    (1, _, 3): "pattern is (1, *, 3)".
+    oneof((1,), (1, 2), (1, 2, 3)): "one of (1,) | (1, 2) | (1, 2, 3)",
+    (1, 2, 3): "(1, 2, 3)"
 }
 ```
