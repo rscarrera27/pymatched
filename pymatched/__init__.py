@@ -63,10 +63,15 @@ class match:
                 return self._do(actn)
             if self._match_type_with_guard(ptrn):  # (<type>, <lambda x -> bool>) => action
                 return self._do(actn)
+
         # 3rd order
-        actn = cases.get(type(self.target))  # <type> => action
+        actn = cases.get(type(self.target))  # <type> => action (Invariant match)
         if actn:
             return self._do(actn)
+
+        for ptrn, actn in cases.items():
+            if isinstance(self.target, ptrn):  # <type> => action (Contravariant match)
+                return self._do(actn)
 
         # handling default
         default = cases.get(Ellipsis) or cases.get(Any)
@@ -124,7 +129,7 @@ class match:
         if isinstance(ptrn, tuple) and len(ptrn) ==2:
             t = ptrn[0]
             guard = ptrn[1]
-            if type(self.target) == t and isinstance(guard, types.LambdaType) and guard(self.target):
+            if (isinstance(self.target, t) or (ptrn is Any)) and isinstance(guard, types.LambdaType) and guard(self.target):
                 is_match = True
 
         return is_match
