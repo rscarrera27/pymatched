@@ -1,19 +1,25 @@
 *<h1 align="center">py<b>matched⇒</b></h1>*
 
-# What is pymatched?
+# 🤖 What is pymatched?
 pymatched is a library which provides functional pattern matching.
 
-# Installation
+# ⚡️Installation
 ```bash
 pip install pymatched
 ```
 
-# Syntax
+# ⏩ Syntax
 ```python
-result = match(<'func'>) >> Mapping[Hashable, Any]
+result = match('func') >> {
+    Case: Action
+}
 ```
 
-## Match order
+- `Action` could be a data or callable(takes one or no argument)
+- If `Action` is callable and takes one argument, match pass matched value as parameter.
+- If `Action` is simple data, match just return it
+
+## 📖 Match order
 1. exact match
 2. oneof match
 3. placeholder match (if target is immutable iterable)
@@ -22,9 +28,9 @@ result = match(<'func'>) >> Mapping[Hashable, Any]
 6. type match (Contravariant match)
 7. handling default if exists
 
-# Usage
+# 🏃‍♀️ Usage
 
-### Note: How to match mutable value?
+### **⚠️ match mutables**
 as you know, mutable things cannot be key of dict so we can not match easly.
 
 this is the example of list.
@@ -32,6 +38,8 @@ this is the example of list.
 #### Case A: use type guards
 
 ```python
+from pymatched import oneof, match
+
 x = match([1, 2, 3]) >> {
     list                            : "list",
     oneof([1], [1, 2], [1, 2, 3])   : "[1] | [1, 2] | [1, 2, 3]",
@@ -43,6 +51,8 @@ x = match([1, 2, 3]) >> {
 #### Case B: use nested match
 
 ```python
+from pymatched import match, _
+
 x = match([1, 2, 3]) >> {
     list: match(...) >> {
         (list, lambda v: v == [1, _, 3]): "pattern is (1, * ,3)",
@@ -96,7 +106,7 @@ If tuple's first element is type and second element is lambda, this case will be
 from pymatched import match
 
 match(42) >> {
-    (int, lambda: v: v == 42): "42 caught",
+    (int, lambda v: v == 42): "42 caught",
     int                      : "int except 42",
 }
 ```
@@ -108,7 +118,7 @@ from typing import Any
 from pymatched import match
 
 match(42) >> {
-    (Any, lambda: v: v in (42, "42")): "42 caught",
+    (Any, lambda v: v in (42, "42")): "42 caught",
     int                              : "int except 42",
 }
 ```
@@ -129,7 +139,7 @@ match(do(fx, None)) >> {
 }
 ```
 
-## Oneof match
+## OneOf match
 ```python
 from pymatched import oneof, match
 
@@ -141,10 +151,10 @@ match(fx(5)) >> {
 }
 ```
 
-# Placeholder match
+## Placeholder match
 
 ```python
-from pymatched import oneof, match, _
+from pymatched import match, _
 
 match((1, 2, 3, 4)) >> {  # change (1, 2, 3, 4) into (100, 2, 3, 4) or (1, 9, 3, 9)
     (1, _, 3, _): "pattern (1, *, 3, *)",
@@ -179,8 +189,8 @@ v = (1, 2, 3)
 x = match(v) >> {
     tuple                         : "Tuple caught",
     (tuple, lambda v: v[-1] == 3) : "last item of tuple is 3",
-    (1, _, 3)                     : "pattern is (1, *, 3)".
+    (1, _, 3)                     : "pattern is (1, *, 3)",
     oneof((1,), (1, 2), (1, 2, 3)): "one of (1,) | (1, 2) | (1, 2, 3)",
-    (1, 2, 3)                     : "(1, 2, 3)"
+    (1, 2, 3)                     : "(1, 2, 3)",
 }
 ```

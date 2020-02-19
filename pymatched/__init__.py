@@ -133,3 +133,54 @@ class match:
                 is_match = True
 
         return is_match
+
+
+if __name__ == "__main__":
+    print((1, 2, 3) == (1, _, 3))
+
+    def fx(x):
+        # raise Exception("EXcepted")
+        return x
+
+    def dx(x):
+        print(x)
+
+    x = match(do(fx, 12)) >> {
+        int: "int => action",  # 3rd order
+        oneof(11, 12, 13): "11 | 12 | 13 => action",  # 2nd order (2)
+        (int, lambda x: x == 12): "(int f(int) -> bool) => action",  # 2nd order (1)
+        12: "12 => action",  # 1st order
+    }
+
+    print(x)
+
+    x = match(fx((1, 2, 3, 4))) >> {
+        tuple: "list => action",  # 3rd order
+        oneof((1, 2), (1, 2, 3), (1, 2, 3, 4)): "[1, 2] | [1, 2, 3] | [1, 2, 3, 4] => action",  # 2nd order
+        (tuple, lambda x: x == (1, 2, 3, 4)): "(list f(list) -> bool) => action",  # 2nd order
+        (1, _, 3, _): "[1, *, 3 ,*] => action",
+        (1, 2, 3, 4): "[1, 2, 3 ,4] => action",  # 1st order
+        (_, 2, 3, 4): match(...) >> {
+            (1, 2, 3, 4): "placeholder is 1",
+            ...: "matched with placeholder -> default"
+        }
+    }
+
+    print(x)
+
+    x = match([1, 2, 3]) >> {
+        list: "list => action",  # 3rd order
+        oneof([1], [1, 2], [1, 2, 3]): "[1] | [1, 2] | [1, 2, 3] => action",  # 2nd order (2)
+        (list, lambda x: x == [1, 2, 3]): "(int f(int) -> bool) => action",  # 2nd order (1)
+        # [1, 2, 3]: "[1, 2, 3] => action",  --> list is unhashable so not working
+    }
+
+    x = match(list) >> {
+        # list: "list => action",  # 3rd order
+        oneof([1], [1, 2], [1, 2, 3]): "[1] | [1, 2] | [1, 2, 3] => action",  # 2nd order (2)
+        (list, lambda x: x == [1, 2, 3]): "(int f(int) -> bool) => action",  # 2nd order (1)
+        # [1, 2, 3]: "[1, 2, 3] => action",  --> list is unhashable so not working
+        type: "type of list is type"
+    }
+
+    print(x)
