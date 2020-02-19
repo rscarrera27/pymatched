@@ -33,8 +33,8 @@ this is the example of list.
 
 ```python
 x = match([1, 2, 3]) >> {
-    list: "list",
-    oneof([1], [1, 2], [1, 2, 3]): "[1] | [1, 2] | [1, 2, 3]",
+    list                            : "list",
+    oneof([1], [1, 2], [1, 2, 3])   : "[1] | [1, 2] | [1, 2, 3]",
     (list, lambda x: x == [1, 2, 3]): "(list, f(list) -> bool)",
     # [1, 2, 3]: "[1, 2, 3]",  --> list is unhashable so not working
 }
@@ -46,7 +46,7 @@ x = match([1, 2, 3]) >> {
 x = match([1, 2, 3]) >> {
     list: match(...) >> {
         (list, lambda v: v == [1, _, 3]): "pattern is (1, * ,3)",
-        ...: "default"
+        ...                             : "default"
     } 
 }
 ```
@@ -97,7 +97,7 @@ from pymatched import match
 
 match(42) >> {
     (int, lambda: v: v == 42): "42 caught",
-    int: "int except 42",
+    int                      : "int except 42",
 }
 ```
 
@@ -109,7 +109,7 @@ from pymatched import match
 
 match(42) >> {
     (Any, lambda: v: v in (42, "42")): "42 caught",
-    int: "int except 42",
+    int                              : "int except 42",
 }
 ```
 
@@ -125,7 +125,7 @@ def fx(v):
 
 match(do(fx, None)) >> {
     Exception: "exception caught",
-    ...: lambda v: f"{v} caught",
+    ...      : lambda v: f"{v} caught",
 }
 ```
 
@@ -177,10 +177,10 @@ from pymatched import oneof, match
 v = (1, 2, 3)
 
 x = match(v) >> {
-    tuple: "Tuple caught",
-    (tuple, lambda v: v[-1] == 3): "last item of tuple is 3",
-    (1, _, 3): "pattern is (1, *, 3)".
+    tuple                         : "Tuple caught",
+    (tuple, lambda v: v[-1] == 3) : "last item of tuple is 3",
+    (1, _, 3)                     : "pattern is (1, *, 3)".
     oneof((1,), (1, 2), (1, 2, 3)): "one of (1,) | (1, 2) | (1, 2, 3)",
-    (1, 2, 3): "(1, 2, 3)"
+    (1, 2, 3)                     : "(1, 2, 3)"
 }
 ```
