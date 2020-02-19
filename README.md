@@ -144,7 +144,7 @@ match(fx(5)) >> {
 # Placeholder match
 
 ```python
-from pymatched import oneof, match
+from pymatched import oneof, match, _
 
 match((1, 2, 3, 4)) >> {  # change (1, 2, 3, 4) into (100, 2, 3, 4) or (1, 9, 3, 9)
     (1, _, 3, _): "pattern (1, *, 3, *)",
@@ -172,7 +172,7 @@ match(5) >> {
 cases could be mixed, but resolved by designated match order.
 
 ```python
-from pymatched import oneof, match
+from pymatched import oneof, match, _
 
 v = (1, 2, 3)
 
